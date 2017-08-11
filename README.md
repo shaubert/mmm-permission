@@ -7,5 +7,5 @@ Simplify process of requesting permissions on Android M+.
         maven{url "https://github.com/shaubert/maven-repo/raw/master/releases"}
     }
     dependencies {
-        compile 'com.shaubert.m.permission:library:1.0'
+        compile 'com.shaubert.m.permission:library:1.0.1'
     }
