@@ -39,6 +39,21 @@ public class PermissionRequester {
         }
     }
 
+    @SuppressLint("NewApi")
+    public final int checkSelfPermission(@NonNull String permissions) {
+        if (!supported()) {
+            throw new IllegalStateException("checkSelfPermission supported only from Android SDK 23");
+        }
+
+        if (activity != null) {
+            return activity.checkSelfPermission(permissions);
+        } else if (supportFragment != null) {
+            return supportFragment.getActivity().checkSelfPermission(permissions);
+        } else {
+            return fragment.getActivity().checkSelfPermission(permissions);
+        }
+    }
+
     public boolean supported() {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M;
     }

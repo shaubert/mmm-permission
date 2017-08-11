@@ -3,14 +3,10 @@ package com.shaubert.m.permission;
 import android.content.pm.PackageManager;
 import com.shaubert.lifecycle.objects.LifecycleBasedObject;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class PermissionsRequest extends LifecycleBasedObject {
     private int requestCode;
-    private String[] permissions;
     private Set<String> permissionsSet;
     private PermissionRequester permissionRequester;
     private SinglePermissionCallback singlePermissionCallback;
@@ -22,7 +18,6 @@ public class PermissionsRequest extends LifecycleBasedObject {
 
     public PermissionsRequest(Object activityOrFragment, int requestCode, String ... permissions) {
         this.permissionRequester = new PermissionRequester(activityOrFragment);
-        this.permissions = permissions;
         this.requestCode = requestCode;
 
         permissionsSet = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(permissions)));
@@ -41,11 +36,18 @@ public class PermissionsRequest extends LifecycleBasedObject {
             throw new IllegalStateException("PermissionsRequest must be attached to LifecycleDelegate");
         }
 
+        boolean hasAllPermissions = true;
         if (permissionRequester.supported()) {
-            permissionRequester.requestPermissions(permissions, requestCode);
-        } else {
+            String[] permissionsToRequest = getPermissionsToRequest();
+            if (permissionsToRequest.length > 0) {
+                permissionRequester.requestPermissions(permissionsToRequest, requestCode);
+                hasAllPermissions = false;
+            }
+        }
+
+        if (hasAllPermissions) {
             if (singlePermissionCallback != null) {
-                for (String permission : permissions) {
+                for (String permission : permissionsSet) {
                     singlePermissionCallback.onPermissionGranted(this, permission);
                 }
             }
@@ -58,20 +60,25 @@ public class PermissionsRequest extends LifecycleBasedObject {
         }
     }
 
+    private String[] getPermissionsToRequest() {
+        List<String> permissionsToRequest = new ArrayList<>();
+        for (String permission : permissionsSet) {
+            if (permissionRequester.checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(permission);
+            }
+        }
+        return permissionsToRequest.toArray(new String[permissionsToRequest.size()]);
+    }
+
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         if (singlePermissionCallback == null && multiplePermissionsCallback == null) return;
 
-        if (requestCode == this.requestCode
-                && equalElements(permissionsSet, permissions)
-                && grantResults != null) {
-
-            Set<String> granted = new HashSet<>(permissions.length);
-            Set<String> denied = new HashSet<>(permissions.length);
-            int minSize = Math.min(permissions.length, grantResults.length);
-            for (int i = 0; i < minSize; i++) {
-                String permission = permissions[i];
-                if (grantResults[i] == PackageManager.PERMISSION_GRANTED) {
+        if (requestCode == this.requestCode) {
+            Set<String> granted = new HashSet<>(permissionsSet.size());
+            Set<String> denied = new HashSet<>(permissionsSet.size());
+            for (String permission : permissionsSet) {
+                if (permissionRequester.checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED) {
                     granted.add(permission);
                     if (singlePermissionCallback != null) {
                         singlePermissionCallback.onPermissionGranted(this, permission);
@@ -83,28 +90,10 @@ public class PermissionsRequest extends LifecycleBasedObject {
                     }
                 }
             }
-
             if (multiplePermissionsCallback != null) {
                 multiplePermissionsCallback.onPermissionsResult(this, granted, denied);
             }
         }
-    }
-
-    static boolean equalElements(Set<String> set, String[] arr) {
-        if (arr == null || arr.length == 0) {
-            return set == null || set.isEmpty();
-        }
-        if (arr.length != set.size()) {
-            return false;
-        }
-
-        for (String el : arr) {
-            if (!set.contains(el)) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     static int requestCodeFromStringArray(String[] permissions) {
