@@ -1,10 +1,9 @@
 package com.shaubert.m.permission.sample;
 
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.TextView;
+
 import com.shaubert.lifecycle.objects.dispatchers.support.LifecycleDispatcherAppCompatActivity;
 import com.shaubert.m.permission.MultiplePermissionsCallback;
 import com.shaubert.m.permission.PermissionsRequest;
@@ -13,6 +12,9 @@ import com.shaubert.m.permission.SinglePermissionCallback;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Random;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.widget.Toolbar;
 
 public class MainActivity extends LifecycleDispatcherAppCompatActivity {
 
