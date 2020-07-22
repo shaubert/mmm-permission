@@ -31,18 +31,28 @@ public class PermissionsRequest extends LifecycleBasedObject {
         this.multiplePermissionsCallback = multiplePermissionsCallback;
     }
 
+    public String[] getNotGranted() {
+        if (permissionRequester.supported()) {
+            return getPermissionsToRequest();
+        } else {
+            return new String[0];
+        }
+    }
+
+    public boolean isGranted() {
+        return getNotGranted().length == 0;
+    }
+
     public void request() {
         if (!isAttached()) {
             throw new IllegalStateException("PermissionsRequest must be attached to LifecycleDelegate");
         }
 
         boolean hasAllPermissions = true;
-        if (permissionRequester.supported()) {
-            String[] permissionsToRequest = getPermissionsToRequest();
-            if (permissionsToRequest.length > 0) {
-                permissionRequester.requestPermissions(permissionsToRequest, requestCode);
-                hasAllPermissions = false;
-            }
+        String[] permissionsToRequest = getNotGranted();
+        if (permissionsToRequest.length > 0) {
+            permissionRequester.requestPermissions(permissionsToRequest, requestCode);
+            hasAllPermissions = false;
         }
 
         if (hasAllPermissions) {
